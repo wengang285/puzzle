@@ -504,7 +504,7 @@ var PieceSprite = cc.Sprite.extend({
     },
 
     onExit: function () {
-        cc.Director.getInstance().getTouchDispatcher()._removeDelegate(this);
+        //cc.Director.getInstance().getTouchDispatcher()._removeDelegate(this);
           //当Sprite退出后，取消点击事件的注册。
         this._touchEnabled = false;
         this._super();
@@ -820,7 +820,7 @@ var PlayLayer = cc.Layer.extend({
 		}
 		
 		var i=0;
-		while(i<5){
+		while(i<50){
 			initRandomPosition();
 			i++;
 		}
@@ -890,19 +890,16 @@ function changPiece(startPieceId,endPieceId){
 	mPositionArray[startCoordinateArray[0]][startCoordinateArray[1]]=endPieceId;
 	
 	mPositionArray[endCoordinateArray[0]][endCoordinateArray[1]]=startPieceId;
-	
-	
-	
-	
+
 }
 
 
 function doAction(direction,startPieceId){
 	var posStr = getPosition(startPieceId);
 	var posArray = posStr.split(",");
-	console.log(posArray);
+	//console.log(posArray);
 	
-	console.log(startPieceId);
+	//console.log(startPieceId);
 	
 	//起始点为空白
 	if(startPieceId==9){
@@ -915,7 +912,7 @@ function doAction(direction,startPieceId){
 				
 				if(tempId){
 					changPiece(startPieceId,tempId);
-					
+					mMoveNum++;
 				}
 				
 				break;
@@ -928,7 +925,7 @@ function doAction(direction,startPieceId){
 				
 				if(tempId){
 					changPiece(startPieceId,tempId);
-					
+					mMoveNum++;
 				}
 				
 				break;
@@ -939,7 +936,7 @@ function doAction(direction,startPieceId){
 				
 				if(tempId){
 					changPiece(startPieceId,tempId);
-					
+					mMoveNum++;
 				}
 				
 				break;
@@ -950,7 +947,7 @@ function doAction(direction,startPieceId){
 				
 				if(tempId){
 					changPiece(startPieceId,tempId);
-					
+					mMoveNum++;
 				}
 				
 				break;
@@ -972,7 +969,7 @@ function doAction(direction,startPieceId){
 				
 				if(tempId && tempId==9){
 					changPiece(startPieceId,tempId);
-					
+					mMoveNum++;
 					
 				}
 				
@@ -986,7 +983,7 @@ function doAction(direction,startPieceId){
 				
 				if(tempId && tempId==9){
 					changPiece(startPieceId,tempId);
-					
+					mMoveNum++;
 				}
 				
 				break;
@@ -997,7 +994,7 @@ function doAction(direction,startPieceId){
 				
 				if(tempId && tempId==9){
 					changPiece(startPieceId,tempId);
-					
+					mMoveNum++;
 				}
 				
 				break;
@@ -1008,7 +1005,7 @@ function doAction(direction,startPieceId){
 				
 				if(tempId && tempId==9){
 					changPiece(startPieceId,tempId);
-					
+					mMoveNum++;
 				}
 				
 				break;
@@ -1023,12 +1020,48 @@ function doAction(direction,startPieceId){
 	
 	if(checkResult()){
 		
-		setTimeout("alert('恭喜您完成拼图')",1000);
+		setTimeout("alert('恭喜您只用了"+mMoveNum+"步完成拼图,击败了全国99%的玩家,请再来一次吧');reset();",1000);
 		
 	}
 	
 	
 	
+	
+}
+
+
+function reset(){
+	mChangedPieceIds=[];
+	mMoveNum=0;
+	
+	mPositionArray = [];
+
+	mPieceArray=[];
+	
+	cc.game.onStart = function(){
+		cc.view.adjustViewPort(true);
+		
+		if (cc.sys.isMobile){
+			cc.view.setDesignResolutionSize(333,333,cc.ResolutionPolicy.SHOW_ALL);
+		}
+		else{
+			cc.view.setDesignResolutionSize(333,333,cc.ResolutionPolicy.SHOW_ALL);
+		}
+        cc.view.resizeWithBrowserSize(true);
+    
+		
+        //cc.view.setDesignResolutionSize(320,500,cc.ResolutionPolicy.FIXED_WIDTH);
+        cc._renderContext.webkitImageSmoothingEnabled = false;
+        cc._renderContext.mozImageSmoothingEnabled = false;
+        cc._renderContext.imageSmoothingEnabled = false; //future
+        cc._renderContext.fillStyle="#afdc4b";
+        //load resources
+        cc.LoaderScene.preload(mResource, function () {
+            cc.director.runScene(new MyScene());
+
+        }, this);
+    };
+    cc.game.run("gameCanvas");
 	
 }
    
@@ -1049,12 +1082,11 @@ function checkResult(){
 	
 	return true;
 	
-	
-	
-	
 }
 
 var mChangedPieceIds=[];
+
+var mMoveNum=0;
 
 function findAdjoinPieces(id){
 	
