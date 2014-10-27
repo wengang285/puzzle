@@ -3,6 +3,8 @@ var mResource= ["res/bg.png","res/1.png","res/2.png","res/3.png","res/4.png","re
 
 var mPositionArray = [];
 
+var mPieceArray=[];
+
 var TOUCHDELAY = 150;
 var COLSIZE = 24;
 var dogs = [];
@@ -532,25 +534,29 @@ var PieceSprite = cc.Sprite.extend({
 		if (touch._point.x - this.beginX > 50) {  
 			//this.rightCombineNumber(); 
 			console.log("right");
-			alert("right");
+			//alert("right");
+			doAction("right",this._node.id);
 		}  
   
 		else if (touch._point.x - this.beginX < -50) {  
 			//this.leftCombineNumber();  
 			console.log("left");
-			alert("left");
+			//alert("left");
+			doAction("left",this._node.id);
 		}  
   
 		else if (touch._point.y - this.beginY > 50) {  
 			//this.upCombineNumber();  
 			console.log("up");
-			alert("up");
+			//alert("up");
+			doAction("up",this._node.id);
 		}  
   
 		else if (touch._point.y - this.beginY < -50) {  
 			
 			console.log("down");
-			alert("down");
+			//alert("down");
+			doAction("down",this._node.id);
 		}  
 		
         if (this._touchBegan) {
@@ -752,6 +758,7 @@ var PlayLayer = cc.Layer.extend({
 		var picHeight=111;
 		
 		
+		mPositionArray[0]=[];
 		var i=1;
 		for(;i<=3;i++){
 			
@@ -767,36 +774,59 @@ var PlayLayer = cc.Layer.extend({
 			
 			//console.log(pic);
 			
+			
+			
 			mPositionArray[0][i-1]=i;
+			
+			mPieceArray[i]=pic;
 			
 			pic.setPosition(centerPos);
 			this.addChild(pic);
 			
 		}
 		
+		mPositionArray[1]=[];
 		for(;i<=6;i++){
 			
 			var centerPos = cc.p(picWidth/2+(i-4)*picWidth, picHeight/2+picHeight);
 			var pic = new PieceSprite("res/"+i+".png",i);
 			
+			
+			
 			mPositionArray[1][i-4]=i;
+			
+			mPieceArray[i]=pic;
 			
 			pic.setPosition(centerPos);
 			this.addChild(pic);
 			
 		}
 		
+		mPositionArray[2]=[];
 		for(;i<=9;i++){
 			
 			var centerPos = cc.p(picWidth/2+(i-7)*picWidth, picHeight/2);
 			var pic = new PieceSprite("res/"+i+".png",i);
 			
-			mPositionArray[1][i-7]=i;
+			
+			
+			mPositionArray[2][i-7]=i;
+			
+			mPieceArray[i]=pic;
 			
 			pic.setPosition(centerPos);
 			this.addChild(pic);
 			
 		}
+		
+		var i=0;
+		while(i<5){
+			initRandomPosition();
+			i++;
+		}
+		
+		
+		
     }
 });
 
@@ -805,8 +835,8 @@ var PlayLayer = cc.Layer.extend({
 function getPosition(id){
 	var i=0;
 	var j=0;
-	for(;i<3;i++){
-		for(;j<3;j++){
+	for(i=0;i<3;i++){
+		for(j=0;j<3;j++){
 			if(mPositionArray[i][j]==id){
 				return i+","+j;
 			}
@@ -814,11 +844,293 @@ function getPosition(id){
 	}
 }
 
+function findLeftPiece(i,j){
+	
+	return mPositionArray[i][j-1];
+	
+}
 
-function doAction(){
+function findRightPiece(i,j){
+	
+	return mPositionArray[i][parseInt(j)+1];
+	
+}
+
+function findUpPiece(i,j){
+	
+	return mPositionArray[i-1][j];
+	
+}
+function findDownPiece(i,j){
+	
+	return mPositionArray[parseInt(i)+1][j];
+	
+}
+
+function changPiece(startPieceId,endPieceId){
+	
+	var startPiece=mPieceArray[startPieceId];
+	var endPiece = mPieceArray[endPieceId];
+		
+	var pos = startPiece.getPosition();
+	
+	startPiece.setPosition(endPiece.getPosition());
+	endPiece.setPosition(pos);
+	
+
+	
+	var startCoordinate = getPosition(startPieceId);
+	
+	var endCoordinate = getPosition(endPieceId);
+	
+	var startCoordinateArray = startCoordinate.split(",");
+	var endCoordinateArray = endCoordinate.split(",");
+	
+	
+	mPositionArray[startCoordinateArray[0]][startCoordinateArray[1]]=endPieceId;
+	
+	mPositionArray[endCoordinateArray[0]][endCoordinateArray[1]]=startPieceId;
+	
+	
+	
+	
+}
+
+
+function doAction(direction,startPieceId){
+	var posStr = getPosition(startPieceId);
+	var posArray = posStr.split(",");
+	console.log(posArray);
+	
+	console.log(startPieceId);
+	
+	//起始点为空白
+	if(startPieceId==9){
+		
+		switch(direction){
+		
+			case "left":
+				
+				var tempId = findLeftPiece(posArray[0],posArray[1]);
+				
+				if(tempId){
+					changPiece(startPieceId,tempId);
+					
+				}
+				
+				break;
+				
+			case "right":
+				
+				var tempId = findRightPiece(posArray[0],posArray[1]);
+				
+				console.log(tempId);
+				
+				if(tempId){
+					changPiece(startPieceId,tempId);
+					
+				}
+				
+				break;
+				
+			case "up":
+				
+				var tempId = findUpPiece(posArray[0],posArray[1]);
+				
+				if(tempId){
+					changPiece(startPieceId,tempId);
+					
+				}
+				
+				break;
+				
+			case "down":
+				
+				var tempId = findDownPiece(posArray[0],posArray[1]);
+				
+				if(tempId){
+					changPiece(startPieceId,tempId);
+					
+				}
+				
+				break;
+		
+			
+			default:
+				break;
+		}
+		
+	}
+	//起始点为其他方块
+	else{
+		
+		switch(direction){
+		
+			case "left":
+				
+				var tempId = findLeftPiece(posArray[0],posArray[1]);
+				
+				if(tempId && tempId==9){
+					changPiece(startPieceId,tempId);
+					
+					
+				}
+				
+				break;
+				
+			case "right":
+				
+				var tempId = findRightPiece(posArray[0],posArray[1]);
+				
+				console.log(tempId);
+				
+				if(tempId && tempId==9){
+					changPiece(startPieceId,tempId);
+					
+				}
+				
+				break;
+				
+			case "up":
+				
+				var tempId = findUpPiece(posArray[0],posArray[1]);
+				
+				if(tempId && tempId==9){
+					changPiece(startPieceId,tempId);
+					
+				}
+				
+				break;
+				
+			case "down":
+				
+				var tempId = findDownPiece(posArray[0],posArray[1]);
+				
+				if(tempId && tempId==9){
+					changPiece(startPieceId,tempId);
+					
+				}
+				
+				break;
+		
+			
+			default:
+				break;
+		}
+		
+	
+	}
+	
+	if(checkResult()){
+		
+		setTimeout("alert('恭喜您完成拼图')",1000);
+		
+	}
+	
+	
+	
 	
 }
    
+   
+function checkResult(){
+	
+	var id=1;
+	var i=0;
+	var j=0;
+	for(i=0;i<3;i++){
+		for(j=0;j<3;j++){
+			if(mPositionArray[i][j]!=id){
+				return false;
+			}
+			id++;
+		}
+	}
+	
+	return true;
+	
+	
+	
+	
+}
+
+var mChangedPieceIds=[];
+
+function findAdjoinPieces(id){
+	
+	var adjoinPieces = [];
+	
+	var posArray = getPosition(id).split(",");
+	
+	
+	if(mPositionArray[parseInt(posArray[0])-1]){
+		var upPieceId = mPositionArray[parseInt(posArray[0])-1][posArray[1]];
+		if(upPieceId){
+			adjoinPieces.push(mPieceArray[upPieceId]);
+		}
+		
+	}
+	
+	
+	if(mPositionArray[parseInt(posArray[0])+1]){
+		var downPieceId = mPositionArray[parseInt(posArray[0])+1][posArray[1]];
+		if(downPieceId){
+			adjoinPieces.push(mPieceArray[downPieceId]);
+		}
+	}
+	
+	
+	
+	var rightPieceId = mPositionArray[posArray[0]][parseInt(posArray[1])+1];
+	
+	if(rightPieceId){
+		adjoinPieces.push(mPieceArray[rightPieceId]);
+	}
+	
+	var leftPieceId = mPositionArray[posArray[0]][parseInt(posArray[1])-1];
+	
+	if(leftPieceId){
+		adjoinPieces.push(mPieceArray[leftPieceId]);
+	}
+	
+	return adjoinPieces;
+	
+
+}
+
+function isInArray(id,arr){
+	
+	for(var val in arr){
+		if(id==val)
+			return true;
+	}
+	
+	return false;
+	
+}
+
+
+function initRandomPosition(){
+	
+	var pieces = findAdjoinPieces(9);
+	
+	var len = pieces.length;
+	
+	var index = parseInt((Math.random()*len));
+	
+	var randomPiece = pieces[index];
+	
+	
+	if(isInArray(randomPiece.id,mChangedPieceIds)){
+		return;
+	}
+	
+	changPiece(9,randomPiece.id);
+	
+	mChangedPieceIds.push(randomPiece.id);
+	
+	
+}
 
 
 function createAnother(){
