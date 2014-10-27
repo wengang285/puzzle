@@ -1,8 +1,15 @@
 var mResource= ["res/bg.png","res/1.png","res/2.png","res/3.png","res/4.png","res/5.png","res/6.png","res/7.png","res/8.png"];
 
+
+var mPositionArray = [];
+
 var TOUCHDELAY = 150;
 var COLSIZE = 24;
 var dogs = [];
+
+
+
+
 var UI = {
     score:0,
     pg:0,
@@ -72,6 +79,7 @@ var UI = {
         },sp)
     }
 };
+
 var Manager = {
     gameTime:0,
     cat:null,
@@ -459,203 +467,99 @@ Husky.getFromPool= function(){
     return d;
 };
 
-//图片碎片
-var Piece = cc.Sprite.extend({
-    state:0,//0 idle, 1 walking, 2 attacking 3 dieing, 4 dead
-    rotRate:25,
-    rotLeft:true,
-    touchtime:Infinity,
-    targetPos:null,
-    left:true,
-    attackDist:140,
-    speed:135,
-    screenHeight:0,
-    ctor:function(){
-        this._super("catnorrisd.png", cc.rect(144,148,70,32));
-        this.attr({
-            anchorX:0.5,
-            anchorY:0
-        });
-        this.scheduleUpdate();
-        //this.state = 1;
-        this.idle();
-        this.screenHeight = cc.director.getVisibleSize().height-100;
-    },
-    idle:function(){
-        this.stopAllActions();
-        this.state = 0;
-        this.setTextureRect(cc.rect(38,2,40,54));
-        this.runAction(cc.sequence(cc.scaleTo(0.25, 1, 0.92), cc.scaleTo(0.25,1,1)).repeatForever());
-        this.rotation = 0;
-    },
-    walk:function(){
-        this.stopAllActions();
-        this.state = 1;
-        this.setTextureRect(cc.rect(2,2,34,54));
-        this.runAction(cc.sequence(cc.rotateTo(0.12, -3), cc.rotateTo(0.12,3)).repeatForever());
-        //this.touchtime = Infinity;
-    },
-    attack:function(){
-        this.stopAllActions();
-        this.state = 2;
-        this.setTextureRect(cc.rect(80,2,52,54));
-        this.touchtime = Infinity;
-        //calculate attack angle
-        var attackAngle = cc.pToAngle(cc.pSub(this.targetPos, this.getPosition()));
-        var pos = cc.pRotateByAngle(cc.p(this.attackDist,0), cc.p(0,0), attackAngle);
-        this.runAction(
-            cc.sequence(
-                cc.moveBy(0.5, pos).easing(cc.easeExponentialOut()),
-                cc.callFunc(function(){this.idle();},this)
-            ));
-    },
-    hurt:function(){
-        console.log(1);
-        if(this.state !== 4)
-        {
-            this.stopAllActions();
-            //this.state = 3;
-            this.setTextureRect(cc.rect(134,2,60,34));
-            //this.zIndex = 1;
-            setTimeout(UI.end, 1000);
-        }
-        this.state = 4
-    },
-    update:function(dt){
-        var mp = this.getPosition();
-        if(this.state != 1 && this.state <3 && Date.now() - this.touchtime > TOUCHDELAY)
-        {
-            this.walk();
-        }
-        if(this.state === 1)
-        {
-            var walkangle = cc.pToAngle(cc.pSub(this.targetPos, mp));
-            var pos = cc.pRotateByAngle(cc.p(this.speed*dt,0), cc.p(0,0), walkangle);
-            this.setPosition(this.x + pos.x, this.y + pos.y);
-            this.x=cc.clampf(320, 0, this.x);
-            this.y=cc.clampf(this.screenHeight, 0, this.y);
-        }
-        else if(this.state === 2)
-        {
-            //check collision with dogs
-            this.x=cc.clampf(320, 0, this.x);
-            this.y=cc.clampf(this.screenHeight, 30, this.y);
-            var cs = COLSIZE;
-            for(var i = 0; i < dogs.length; i++)
-            {
-                var d = dogs[i];
-                if(d.alive && cc.pDistance(d.getPosition() , mp) < cs)
-                {
-                    if(d.type === 0)
-                    {
-                        d.hurt();
-                    }
-                    else if(d.state < 1){
-                        d.hurt();
-                    }
-                }
-            }
-        }
-        this.zIndex=-this.y;
-    }
-});
 
-	onEnter:function () {
+var mStartPiece ;
+//小块图片
+var PieceSprite = cc.Sprite.extend({
+	
+	id:0,
+    _touchBegan: false,
+    _touchEnabled: true,
+	
+	beginX:0,
+	beginY:0,
+	
+	
+    ctor: function (image,id) {
+		this._super();
+		this.init(image);
+		this.id=id;
+    },
+	
+
+    onEnter: function () {
+        //cc.Director.getInstance().getTouchDispatcher()._addTargetedDelegate(this, 0); 
         this._super();
-        var size = cc.director.getWinSize();
+		cc.eventManager.addListener({
+			event: cc.EventListener.TOUCH_ONE_BY_ONE,
+			swallowTouches: true,
+			onTouchBegan: this.onTouchBegan,
+			//onTouchMoved: this.onTouchMoved,
+			onTouchEnded: this.onTouchEnded
+			//onTouchCancelled: this.onTouchCancelled
+		}, this);
 
+    },
+
+    onExit: function () {
+        cc.Director.getInstance().getTouchDispatcher()._removeDelegate(this);
+          //当Sprite退出后，取消点击事件的注册。
+        this._touchEnabled = false;
+        this._super();
+    },
+    onTouchBegan: function (touch, event) {
+		//console.log(touch.getLocation());
+		//console.log(this);
+        if (cc.rectContainsPoint(this._node._getBoundingBoxToCurrentNode(), touch.getLocation())) {
+            //当点击在 Sprite 范围内时，执行。
+            //在这里处理点击事件。
+            this._touchBegan = true;
+			
+			this.beginX= touch._prevPoint.x;
+			
+			this.beginY= touch._prevPoint.y;
+			
+			
+            return true; //返回true， 才会执行 onTouchEnded方法。
+        }
+        return false;
+    },
+
+    onTouchEnded: function (touch, event) {
+	
 		
 		
+		if (touch._point.x - this.beginX > 50) {  
+			//this.rightCombineNumber(); 
+			console.log("right");
+			alert("right");
+		}  
+  
+		else if (touch._point.x - this.beginX < -50) {  
+			//this.leftCombineNumber();  
+			console.log("left");
+			alert("left");
+		}  
+  
+		else if (touch._point.y - this.beginY > 50) {  
+			//this.upCombineNumber();  
+			console.log("up");
+			alert("up");
+		}  
+  
+		else if (touch._point.y - this.beginY < -50) {  
+			
+			console.log("down");
+			alert("down");
+		}  
 		
-        Manager.init(this);
-
-        this.scoreLabel =  UI.scoreLabel = new cc.LabelTTF("0", "黑体", 24, cc.size(150, 30), cc.TEXT_ALIGNMENT_LEFT);
-        this.addChild(this.scoreLabel);
-        this.scoreLabel.attr({
-            x:30,
-            y:cc.director.getVisibleSize().height - 25,
-            strokeStyle: cc.color(0,0,0),
-            lineWidth: 2,
-            color: cc.color(255,150,100),
-            anchorX:0.1
-        });
-        var pg = new cc.Sprite("pg.png");
-        this.addChild(pg);
-        pg.attr({
-            x:230,
-            y:cc.director.getVisibleSize().height - 25
-        });
-
-        UI.pgLabel = new cc.LabelTTF("0", "黑体", 20, cc.size(80, 30), cc.TEXT_ALIGNMENT_LEFT);
-        this.addChild(UI.pgLabel);
-        UI.pgLabel.attr({
-            x:290,
-            y:cc.director.getVisibleSize().height - 30,
-            strokeStyle: cc.color(0,0,0),
-            lineWidth: 2,
-            anchorX:0.1
-        });
-
-        cc.eventManager.addListener({
-            event:cc.EventListener.TOUCH_ONE_BY_ONE,
-            swallowTouches:true,
-            onTouchBegan:function(touch, event){
-                var cat = Manager.cat;
-                if(cat.state >= 2)
-                return false;
-                cat.touchtime = Date.now();
-                cat.targetPos = touch.getLocation();
-                event.getCurrentTarget().touchbeginpos = touch.getLocation();
-                return true;
-            },
-            onTouchMoved:function(touch, event)
-            {
-                var cat = Manager.cat;
-                cat.targetPos = touch.getLocation();
-                if(cc.pDistance(cat.targetPos, event.getCurrentTarget().touchbeginpos)> 50)
-                {
-                    cat.walk();
-                }
-                if(cat.state < 2 && touch.getLocationX() > cat.x)
-                {
-                    cat.left = false;
-                    cat.setFlippedX(true);
-                }
-                else
-                {
-                    cat.left = true;
-                    cat.setFlippedX(false);
-                }
-            },
-            onTouchEnded:function(touch, event)
-            {
-                var cat = Manager.cat;
-                if(cat.state !== 4)
-                {
-                    if(Date.now() - cat.touchtime < TOUCHDELAY)
-                    {
-                        cat.attack();
-                    }
-                    else{
-                        cat.idle();
-                    }
-                    if(touch.getLocationX() > cat.x)
-                    {   
-                        cat.left = false;
-                        cat.setFlippedX(true);
-                    }
-                    else
-                    {
-                        cat.left = true;
-                        cat.setFlippedX(false);
-                    }
-                }
-                cat.touchtime = Infinity;
-            }
-        },this);
-
+        if (this._touchBegan) {
+            this._touchBegan = false;
+        }
     }
 });
+
+	
 
 var score = 0;
 var person_dead=null;
@@ -719,6 +623,7 @@ var MyScene = cc.Scene.extend({
             event:cc.EventListener.TOUCH_ONE_BY_ONE,
             swallowTouches:true,
             onTouchMoved:function(touch, event){
+				console.log(event.target);
 				/*
                 var cat = Manager.cat;
                 if(cat.state >= 2)
@@ -730,8 +635,8 @@ var MyScene = cc.Scene.extend({
 				*/
 				//return true;
 				//console.log(touch.getLocation());
-				sight.x=touch.getLocation().x+(sight.width)/2;
-				sight.y=touch.getLocation().y+(sight.height)/2;
+				//sight.x=touch.getLocation().x+(sight.width)/2;
+				//sight.y=touch.getLocation().y+(sight.height)/2;
             },
             onTouchEnded:function(touch, event)
             {
@@ -755,6 +660,7 @@ var MyScene = cc.Scene.extend({
 				*/
 				//alert('shoot');
 				//console.log(touch.getLocation());
+				/*
 				var shootPosition = touch.getLocation();
 				console.log(cc.pDistance(shootPosition, person.getPosition()));
 				if(cc.pDistance(shootPosition, person.getPosition())< 50){
@@ -766,6 +672,7 @@ var MyScene = cc.Scene.extend({
 					
 					
 				}
+				*/
 				
 				
             },
@@ -827,6 +734,8 @@ var BackgroundLayer = cc.Layer.extend({
 
 
 
+
+
 //人物图
 var PlayLayer = cc.Layer.extend({
     ctor:function () {
@@ -847,8 +756,19 @@ var PlayLayer = cc.Layer.extend({
 		for(;i<=3;i++){
 			
 			var centerPos = cc.p(picWidth/2+(i-1)*picWidth, picHeight/2+picHeight*2);
-			console.log(centerPos);
-			var pic = new cc.Sprite("res/"+i+".png");
+			//console.log(centerPos);
+			var pic = new PieceSprite("res/"+i+".png",i);
+			
+			//console.log("PieceSprite="+pic._rect.y);
+			
+			//var pic = new cc.Sprite("res/"+i+".png");
+			
+			//console.log("cc.Sprite="+pic);
+			
+			//console.log(pic);
+			
+			mPositionArray[0][i-1]=i;
+			
 			pic.setPosition(centerPos);
 			this.addChild(pic);
 			
@@ -857,7 +777,10 @@ var PlayLayer = cc.Layer.extend({
 		for(;i<=6;i++){
 			
 			var centerPos = cc.p(picWidth/2+(i-4)*picWidth, picHeight/2+picHeight);
-			var pic = new cc.Sprite("res/"+i+".png");
+			var pic = new PieceSprite("res/"+i+".png",i);
+			
+			mPositionArray[1][i-4]=i;
+			
 			pic.setPosition(centerPos);
 			this.addChild(pic);
 			
@@ -866,7 +789,10 @@ var PlayLayer = cc.Layer.extend({
 		for(;i<=9;i++){
 			
 			var centerPos = cc.p(picWidth/2+(i-7)*picWidth, picHeight/2);
-			var pic = new cc.Sprite("res/"+i+".png");
+			var pic = new PieceSprite("res/"+i+".png",i);
+			
+			mPositionArray[1][i-7]=i;
+			
 			pic.setPosition(centerPos);
 			this.addChild(pic);
 			
@@ -875,122 +801,24 @@ var PlayLayer = cc.Layer.extend({
 });
 
 
-    cat:null,
-    touchbeginpos:null,
-    onEnter:function () {
-        this._super();
-        var size = cc.director.getWinSize();
 
-        //Manager.init(this);
+function getPosition(id){
+	var i=0;
+	var j=0;
+	for(;i<3;i++){
+		for(;j<3;j++){
+			if(mPositionArray[i][j]==id){
+				return i+","+j;
+			}
+		}
+	}
+}
 
-        var scoreLabel =  new cc.LabelTTF("0", "黑体", 24, cc.size(150, 30), cc.TEXT_ALIGNMENT_LEFT);
-        this.addChild(scoreLabel);
-        scoreLabel.attr({
-            x:30,
-            y:cc.director.getVisibleSize().height - 25,
-            strokeStyle: cc.color(0,0,0),
-            lineWidth: 2,
-            color: cc.color(255,150,100),
-            anchorX:0.1
-        });
-		/*
-        var pg = new cc.Sprite("pg.png");
-        this.addChild(pg);
-        pg.attr({
-            x:230,
-            y:cc.director.getVisibleSize().height - 25
-        });
-		*/
 
-		/*
-        UI.pgLabel = new cc.LabelTTF("0", "黑体", 20, cc.size(80, 30), cc.TEXT_ALIGNMENT_LEFT);
-        this.addChild(UI.pgLabel);
-        UI.pgLabel.attr({
-            x:290,
-            y:cc.director.getVisibleSize().height - 30,
-            strokeStyle: cc.color(0,0,0),
-            lineWidth: 2,
-            anchorX:0.1
-        });
-		*/
-		
-		
-		person = new cc.Sprite("wz.jpg");
-        person.anchorX = 1;
-        person.anchorY = 1;
-		person.width=80;
-		person.height=40;
-        person.x = cc.winSize.width/2;
-        person.y = cc.winSize.height/2;
-        this.addChild(person);
-		
-		
-		person_dead = new cc.Sprite("person-dead.png");
-		person_dead.anchorX = 1;
-		person_dead.anchorY = 1;
-		person_dead.width=40;
-		person_dead.height=20;
-		person_dead.x = cc.winSize.width/2;
-		person_dead.y = cc.winSize.height/2;
-		this.addChild(person_dead);
-		person_dead.setVisible(false);
-		
-		
-		var sight = new cc.Sprite("sight.png");
-        sight.anchorX = 1;
-        sight.anchorY = 1;
-		sight.width=20;
-		sight.height=10;
-        sight.x = cc.winSize.width - 15;
-        sight.y = cc.winSize.height - 5;
-        this.addChild(sight);
-		
-		
-
-        cc.eventManager.addListener({
-            event:cc.EventListener.TOUCH_ONE_BY_ONE,
-            swallowTouches:true,
-            onTouchMoved:function(touch, event){
-				/*
-                var cat = Manager.cat;
-                if(cat.state >= 2)
-                return false;
-                cat.touchtime = Date.now();
-                cat.targetPos = touch.getLocation();
-                event.getCurrentTarget().touchbeginpos = touch.getLocation();
-                return true;
-				*/
-				//return true;
-				//console.log(touch.getLocation());
-				sight.x=touch.getLocation().x+(sight.width)/2;
-				sight.y=touch.getLocation().y+(sight.height)/2;
-            },
-            onTouchEnded:function(touch, event)
-            {
-				
-				var shootPosition = touch.getLocation();
-				console.log(cc.pDistance(shootPosition, person.getPosition()));
-				if(cc.pDistance(shootPosition, person.getPosition())< 50){
-					person.setVisible(false);
-					person_dead.setVisible(true);
-					setTimeout("createAnother()",1000);
-					score++;
-					scoreLabel.setString(""+score);
-					
-					
-				}
-				
-				
-            },
-            onTouchBegan:function(touch, event)
-            {
-				return true;
-				
-            }
-        },this);
-
-    }
-});
+function doAction(){
+	
+}
+   
 
 
 function createAnother(){
@@ -1012,7 +840,7 @@ window.onload = function(){
 		cc.view.adjustViewPort(true);
 		
 		if (cc.sys.isMobile){
-			cc.view.setDesignResolutionSize(333,333,cc.ResolutionPolicy.FIXED_WIDTH);
+			cc.view.setDesignResolutionSize(333,333,cc.ResolutionPolicy.SHOW_ALL);
 		}
 		else{
 			cc.view.setDesignResolutionSize(333,333,cc.ResolutionPolicy.SHOW_ALL);
