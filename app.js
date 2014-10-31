@@ -5,9 +5,13 @@ var mPositionArray = [];
 
 var mPieceArray=[];
 
+
+var mLevel=1;
+
 var TOUCHDELAY = 150;
 var COLSIZE = 24;
 var dogs = [];
+
 
 
 
@@ -713,6 +717,17 @@ var MyScene = cc.Scene.extend({
             }
         },this);
 
+
+        if(mTimeLayer==null){
+            mTimeLayer = new TimeLayer();
+        }
+        mTimeLayer.setLabel(60);
+        this.addChild(mTimeLayer);
+        if(mTimeLayer.isRunning==false){
+            mTimeLayer.run();
+        }
+
+
     }
 });
 
@@ -759,6 +774,7 @@ var PlayLayer = cc.Layer.extend({
 		
 		
 		mPositionArray[0]=[];
+
 		var i=1;
 		for(;i<=3;i++){
 			
@@ -818,18 +834,79 @@ var PlayLayer = cc.Layer.extend({
 			this.addChild(pic);
 			
 		}
-		
-		var i=0;
-		while(i<50){
-			initRandomPosition();
-			i++;
-		}
-		
-		
-		
+
+
+        var i=0;
+        while(i<mLevel){
+            //initRandomPosition();
+            setTimeout("initRandomPosition();",150*i);
+            i++;
+        }
+
     }
 });
 
+//计时器
+
+var mTimeLayer=null;
+var TimeLayer = cc.Layer.extend({
+    timeLabel:null,
+    isRunning:false,
+    ctor:function () {
+        this._super();
+        this.init();
+    },
+
+    init:function () {
+        this._super();
+        var winsize = cc.director.getWinSize();
+
+        this.timeLabel = new cc.LabelTTF("00:60", "黑体", 20, cc.size(80, 30), cc.TEXT_ALIGNMENT_LEFT);
+        this.addChild(this.timeLabel);
+        this.timeLabel.attr({
+            x:30,
+            y:cc.director.getVisibleSize().height - 30,
+            strokeStyle: cc.color(0,0,0),
+            lineWidth: 2,
+            anchorX:0.1
+        });
+    },
+    getLabel:function(){
+       return this.timeLabel.getString().split(":")[1];
+    },
+    setLabel:function(labelStr){
+        this.timeLabel.setString("00:"+labelStr);
+    },
+
+    run:function(){
+        //setTimeout("beginTime()",1000);
+        this.setLabel(60);
+        beginTime();
+        this.isRunning=true;
+    }
+
+});
+
+
+function beginTime(){
+
+    var curretTime = parseInt(mTimeLayer.getLabel());
+
+    if(curretTime>0){
+        curretTime--;
+        if(curretTime<10){
+            curretTime="0"+curretTime;
+        }
+        mTimeLayer.setLabel(curretTime);
+        setTimeout("beginTime()",1000);
+    }
+    else{
+        showSuccessLabel();
+    }
+
+
+
+}
 
 
 function getPosition(id){
@@ -897,7 +974,7 @@ function changPiece(startPieceId,endPieceId){
 function doAction(direction,startPieceId){
 	var posStr = getPosition(startPieceId);
 	var posArray = posStr.split(",");
-	//console.log(posArray);
+	//c
 	
 	//console.log(startPieceId);
 	
@@ -1019,8 +1096,12 @@ function doAction(direction,startPieceId){
 	}
 	
 	if(checkResult()){
-		
-		setTimeout("alert('恭喜您只用了"+mMoveNum+"步完成拼图,击败了全国99%的玩家,请再来一次吧');reset();",1000);
+
+
+        //showSuccessLabel();
+        mLevel++;
+        //reset();
+		setTimeout("reset();",1000);
 		
 	}
 	
@@ -1030,14 +1111,29 @@ function doAction(direction,startPieceId){
 }
 
 
+var mScene;
+
+function showSuccessLabel(){
+    var lb = cc.LabelTTF.create("您总共只用了"+mMoveNum+"步完成"+mLevel+"关拼图,击败了全国99%的玩家,马上分享给好友吧", "黑体", 20, cc.size(225,105), cc.TEXT_ALIGNMENT_LEFT);
+    document.title = window.wxData.desc = "您总共只用了"+mMoveNum+"步完成"+mLevel+"关拼图,击败了全国99%的玩家,马上分享给好友吧！";
+    document.title = window.wxFriend.desc = "您总共只用了"+mMoveNum+"步完成"+mLevel+"关拼图,击败了全国99%的玩家,马上分享给好友吧";
+    lb.strokeStyle = cc.color(0,0,0);s
+    lb.lineWidth = 2;
+    mScene.addChild(lb);
+    lb.setPosition(mScene.getContentSize().width/2+ 2, mScene.getContentSize().height/2 -5);
+}
+
+
 function reset(){
 	mChangedPieceIds=[];
-	mMoveNum=0;
+	//mMoveNum=0;
 	
 	mPositionArray = [];
 
 	mPieceArray=[];
-	
+
+    //mScene.preload();c
+
 	cc.game.onStart = function(){
 		cc.view.adjustViewPort(true);
 		
@@ -1055,13 +1151,19 @@ function reset(){
         cc._renderContext.mozImageSmoothingEnabled = false;
         cc._renderContext.imageSmoothingEnabled = false; //future
         cc._renderContext.fillStyle="#afdc4b";
+        mScene = new MyScene();
+        cc.director.runScene(mScene);
         //load resources
+        /*
         cc.LoaderScene.preload(mResource, function () {
-            cc.director.runScene(new MyScene());
+            mScene = new MyScene();
+            cc.director.runScene(mScene);
 
         }, this);
+        */
     };
     cc.game.run("gameCanvas");
+
 	
 }
    
@@ -1097,7 +1199,7 @@ function findAdjoinPieces(id){
 	
 	if(mPositionArray[parseInt(posArray[0])-1]){
 		var upPieceId = mPositionArray[parseInt(posArray[0])-1][posArray[1]];
-		if(upPieceId){
+		if(upPieceId && upPieceId!=mLastChangePieceId){
 			adjoinPieces.push(mPieceArray[upPieceId]);
 		}
 		
@@ -1106,7 +1208,7 @@ function findAdjoinPieces(id){
 	
 	if(mPositionArray[parseInt(posArray[0])+1]){
 		var downPieceId = mPositionArray[parseInt(posArray[0])+1][posArray[1]];
-		if(downPieceId){
+		if(downPieceId && downPieceId!=mLastChangePieceId){
 			adjoinPieces.push(mPieceArray[downPieceId]);
 		}
 	}
@@ -1115,13 +1217,13 @@ function findAdjoinPieces(id){
 	
 	var rightPieceId = mPositionArray[posArray[0]][parseInt(posArray[1])+1];
 	
-	if(rightPieceId){
+	if(rightPieceId && rightPieceId!=mLastChangePieceId){
 		adjoinPieces.push(mPieceArray[rightPieceId]);
 	}
 	
 	var leftPieceId = mPositionArray[posArray[0]][parseInt(posArray[1])-1];
 	
-	if(leftPieceId){
+	if(leftPieceId && leftPieceId!=mLastChangePieceId){
 		adjoinPieces.push(mPieceArray[leftPieceId]);
 	}
 	
@@ -1141,6 +1243,7 @@ function isInArray(id,arr){
 	
 }
 
+var mLastChangePieceId;
 
 function initRandomPosition(){
 	
@@ -1148,18 +1251,23 @@ function initRandomPosition(){
 	
 	var len = pieces.length;
 	
-	var index = parseInt((Math.random()*len));
+	var index = Math.floor((Math.random()*len));
 	
 	var randomPiece = pieces[index];
 	
-	
+	/*
 	if(isInArray(randomPiece.id,mChangedPieceIds)){
 		return;
 	}
-	
+	*/
+
 	changPiece(9,randomPiece.id);
+    console.log("changeNode="+randomPiece.id);
+
+    mLastChangePieceId=randomPiece.id;
 	
 	mChangedPieceIds.push(randomPiece.id);
+
 	
 	
 }
@@ -1199,7 +1307,8 @@ window.onload = function(){
         cc._renderContext.fillStyle="#afdc4b";
         //load resources
         cc.LoaderScene.preload(mResource, function () {
-            cc.director.runScene(new MyScene());
+            mScene = new MyScene();
+            cc.director.runScene(mScene);
 
         }, this);
     };
