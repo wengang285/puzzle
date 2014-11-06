@@ -1,4 +1,4 @@
-var mResource= ["http://ossweb-img.qq.com/images/chanpin/zzlt/public/weixingame/bg.png","http://ossweb-img.qq.com/images/chanpin/zzlt/public/weixingame/1.png","http://ossweb-img.qq.com/images/chanpin/zzlt/public/weixingame/2.png","http://ossweb-img.qq.com/images/chanpin/zzlt/public/weixingame/3.png","http://ossweb-img.qq.com/images/chanpin/zzlt/public/weixingame/4.png","http://ossweb-img.qq.com/images/chanpin/zzlt/public/weixingame/5.png","http://ossweb-img.qq.com/images/chanpin/zzlt/public/weixingame/6.png","http://ossweb-img.qq.com/images/chanpin/zzlt/public/weixingame/7.png","http://ossweb-img.qq.com/images/chanpin/zzlt/public/weixingame/8.png"];
+var mResource= ["res/bg.png","res/1.png","res/2.png","res/3.png","res/4.png","res/5.png","res/6.png","res/7.png","res/8.png"];
 
 
 var mPositionArray = [];
@@ -103,8 +103,6 @@ var PieceSprite = cc.Sprite.extend({
         }
     }
 });
-
-	
 
 var score = 0;
 var person_dead=null;
@@ -280,7 +278,7 @@ var BackgroundLayer = cc.Layer.extend({
  
         //create the background image and position it at the center of screen
         var centerPos = cc.p(winsize.width / 2, winsize.height / 2);
-        var spriteBG = new cc.Sprite("http://ossweb-img.qq.com/images/chanpin/zzlt/public/weixingame/bg.png");
+        var spriteBG = new cc.Sprite("res/bg.png");
 		//console.log(spriteBG);
         spriteBG.setPosition(centerPos);
         this.addChild(spriteBG);
@@ -315,7 +313,7 @@ var PlayLayer = cc.Layer.extend({
 			
 			var centerPos = cc.p(picWidth/2+(i-1)*picWidth, picHeight/2+picHeight*2);
 			//console.log(centerPos);
-			var pic = new PieceSprite("http://ossweb-img.qq.com/images/chanpin/zzlt/public/weixingame/"+i+".png",i);
+			var pic = new PieceSprite("res/"+i+".png",i);
 			
 			//console.log("PieceSprite="+pic._rect.y);
 			
@@ -340,7 +338,7 @@ var PlayLayer = cc.Layer.extend({
 		for(;i<=6;i++){
 			
 			var centerPos = cc.p(picWidth/2+(i-4)*picWidth, picHeight/2+picHeight);
-			var pic = new PieceSprite("http://ossweb-img.qq.com/images/chanpin/zzlt/public/weixingame/"+i+".png",i);
+			var pic = new PieceSprite("res/"+i+".png",i);
 			
 			
 			
@@ -357,7 +355,7 @@ var PlayLayer = cc.Layer.extend({
 		for(;i<=9;i++){
 			
 			var centerPos = cc.p(picWidth/2+(i-7)*picWidth, picHeight/2);
-			var pic = new PieceSprite("http://ossweb-img.qq.com/images/chanpin/zzlt/public/weixingame/"+i+".png",i);
+			var pic = new PieceSprite("res/"+i+".png",i);
 			
 			
 			
@@ -885,7 +883,7 @@ var ShareUI = cc.LayerColor.extend({
     ctor: function () {
         this._super(cc.color(0, 0, 0, 188), cc.winSize.width, cc.winSize.height);
 
-        var arrow = new cc.Sprite("http://ossweb-img.qq.com/images/chanpin/zzlt/public/weixingame/arrow.png");
+        var arrow = new cc.Sprite("res/arrow.png");
         arrow.anchorX = 1;
         arrow.anchorY = 1;
         arrow.x = cc.winSize.width - 15;
