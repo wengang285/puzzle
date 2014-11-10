@@ -56,9 +56,13 @@ var PieceSprite = cc.Sprite.extend({
             //在这里处理点击事件。
             this._touchBegan = true;
 			
-			this.beginX= touch._prevPoint.x;
-			
-			this.beginY= touch._prevPoint.y;
+			//this.beginX= touch._prevPoint.x;
+
+			//this.beginY= touch._prevPoint.y;
+
+            this.beginX= touch.getLocation().x;
+
+            this.beginY= touch.getLocation().y;
 			
 			
             return true; //返回true， 才会执行 onTouchEnded方法。
@@ -67,42 +71,54 @@ var PieceSprite = cc.Sprite.extend({
     },
 
     onTouchEnded: function (touch, event) {
-	
-		
-		
-		if (touch._point.x - this.beginX > 50) {  
+
+
+
+
+
+		if (touch._point.x - this.beginX > 20) {
 			//this.rightCombineNumber(); 
 			//console.log("right");
 			//alert("right");
 			doAction("right",this._node.id);
 		}  
   
-		else if (touch._point.x - this.beginX < -50) {  
+		else if (touch._point.x - this.beginX < -20) {
 			//this.leftCombineNumber();  
 			//console.log("left");
 			//alert("left");
 			doAction("left",this._node.id);
 		}  
   
-		else if (touch._point.y - this.beginY > 50) {  
+		else if (touch._point.y - this.beginY > 20) {
 			//this.upCombineNumber();  
 			//console.log("up");
 			//alert("up");
 			doAction("up",this._node.id);
 		}  
   
-		else if (touch._point.y - this.beginY < -50) {  
+		else if (touch._point.y - this.beginY < -20) {
 			
 			//console.log("down");
 			//alert("down");
 			doAction("down",this._node.id);
-		}  
+		}
+        else{
+            alert(this.beginX);
+            //alert(touch._point.x);
+            alert(touch.getLocation().x);
+            alert(this.beginY);
+            //alert(touch._point.y);
+            alert(touch.getLocation().y);
+        }
 		
         if (this._touchBegan) {
             this._touchBegan = false;
         }
     }
 });
+
+	
 
 var score = 0;
 var person_dead=null;
@@ -369,9 +385,9 @@ var PlayLayer = cc.Layer.extend({
 		}
 
 
+        //initRandomPosition(mLevel);
         var i=0;
         while(i<mLevel){
-            //initRandomPosition();
             setTimeout("initRandomPosition();",150*i);
             i++;
         }
@@ -477,18 +493,61 @@ function findDownPiece(i,j){
 	
 }
 
+
+
+
+//直接调换两个方块位置，不带动画，用户初始化
+function exchangePiece(startPieceId,endPieceId){
+    var startPiece=mPieceArray[startPieceId];
+    var endPiece = mPieceArray[endPieceId];
+
+    var startPos = startPiece.getPosition();
+
+    var endPos = endPiece.getPosition();
+
+
+    startPiece.setPosition(endPos);
+    endPiece.setPosition(startPos);
+
+
+
+    var startCoordinate = getPosition(startPieceId);
+
+    var endCoordinate = getPosition(endPieceId);
+
+    var startCoordinateArray = startCoordinate.split(",");
+    var endCoordinateArray = endCoordinate.split(",");
+
+
+    mPositionArray[startCoordinateArray[0]][startCoordinateArray[1]]=endPieceId;
+
+    mPositionArray[endCoordinateArray[0]][endCoordinateArray[1]]=startPieceId;
+
+}
+
+//动画交换两个方块
 function changePiece(startPieceId,endPieceId){
 	
 	var startPiece=mPieceArray[startPieceId];
 	var endPiece = mPieceArray[endPieceId];
 		
-	var pos = startPiece.getPosition();
+	var startPos = startPiece.getPosition();
 
-    var action1 = cc.MoveTo.create(0.1,endPiece.getPosition());
-    var action2 = cc.MoveTo.create(0.1,pos);
+    var endPos = endPiece.getPosition();
 
-    startPiece.runAction(action1);
-    endPiece.runAction(action2);
+    var action1 = cc.MoveTo.create(0.1,endPos);
+    var action2 = cc.MoveTo.create(0.1,startPos);
+
+    var sq1 = cc.Sequence.create(action1);
+
+    var sq2 = cc.Sequence.create(action2);
+
+
+    startPiece.runAction(sq1);
+    endPiece.runAction(sq2);
+
+    //startPiece.runAction(action1);
+    //endPiece.runAction(action2);
 	
 	//startPiece.setPosition(endPiece.getPosition());
 	//endPiece.setPosition(pos);
@@ -810,27 +869,40 @@ function isInArray(id,arr){
 var mLastChangePieceId;
 
 function initRandomPosition(){
-	
-	var pieces = findAdjoinPieces(9);
-	
-	var len = pieces.length;
-	
-	var index = Math.floor((Math.random()*len));
-	
-	var randomPiece = pieces[index];
-	
-	/*
-	if(isInArray(randomPiece.id,mChangedPieceIds)){
-		return;
-	}
-	*/
 
-	changePiece(9,randomPiece.id);
-    //console.log("changeNode="+randomPiece.id);
+    //var i=0;
+    //
+    //while(i<maxMoveNum){
+        var pieces = findAdjoinPieces(9);
 
-    mLastChangePieceId=randomPiece.id;
+        var len = pieces.length;
+
+        var index = Math.floor((Math.random()*len));
+
+        var randomPiece = pieces[index];
+
+        /*
+         if(isInArray(randomPiece.id,mChangedPieceIds)){
+         return;
+         }
+         */
+
+
+
+
+
+        exchangePiece(9,randomPiece.id);
+        //console.log("changeNode="+randomPiece.id);
+
+        mLastChangePieceId=randomPiece.id;
+
+        mChangedPieceIds.push(randomPiece.id);
+
+        //i++;
+
+    //}
 	
-	mChangedPieceIds.push(randomPiece.id);
+
 
 	
 	
